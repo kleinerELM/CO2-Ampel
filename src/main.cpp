@@ -1,6 +1,12 @@
 #include <Arduino.h>
 #include "functions.h"
-#include "wifi_setup.h"
+
+//Comment out to disable all wifi functions
+#define USE_WIFI
+
+#if defined(USE_WIFI)
+  #include "wifi_setup.h"
+#endif
 
 static const char AUX_AppPage[] PROGMEM = R"(
 {
@@ -44,51 +50,55 @@ void setup() {
   init_DHT();
   init_neopixel(0,0,125);
 
-  Serial.println("-WiFi-");
+  #if defined(USE_WIFI)
+    Serial.println("-WiFi-");
 
-  // Prepare the ESP8266HTTPUpdateServer
-  // The /update handler will be registered during this function.
-  httpUpdater.setup(&httpServer, USERNAME, PASSWORD);
+    // Prepare the ESP8266HTTPUpdateServer
+    // The /update handler will be registered during this function.
+    httpUpdater.setup(&httpServer, USERNAME, PASSWORD);
 
-  // Load a custom web page for a sketch and a dummy page for the updater.
-  hello.load(AUX_AppPage);
-  portal.join({ hello, update });
+    // Load a custom web page for a sketch and a dummy page for the updater.
+    hello.load(AUX_AppPage);
+    portal.join({ hello, update });
 
-  if (portal.begin()) {
-    if (MDNS.begin(host)) {
-        MDNS.addService("http", "tcp", HTTP_PORT);
-        Serial.println(" WiFi connected!");
-        Serial.printf( " HTTPUpdateServer ready: http://%s.local/update\n", host);
-        Serial.println();
+    if (portal.begin()) {
+      if (MDNS.begin(host)) {
+          MDNS.addService("http", "tcp", HTTP_PORT);
+          Serial.println(" WiFi connected!");
+          Serial.printf( " HTTPUpdateServer ready: http://%s.local/update\n", host);
+          Serial.println();
 
-        // MQTT Setup
-        Serial.println("-MQTT-");
-        client.setServer(mqtt_server, 1883);
-        //client.setCallback(callback);
-        reconnect();
-        //snprintf (msgMQTT, 75, "G||");
-        //Serial.println("Publish message [" + String(MQTT_SEND_EVENT) + "]: " + String(msgMQTT));
-        //client.publish(MQTT_SEND_EVENT, msgMQTT);
-        Serial.println();
+          // MQTT Setup
+          Serial.println("-MQTT-");
+          client.setServer(mqtt_server, 1883);
+          //client.setCallback(callback);
+          reconnect();
+          //snprintf (msgMQTT, 75, "G||");
+          //Serial.println("Publish message [" + String(MQTT_SEND_EVENT) + "]: " + String(msgMQTT));
+          //client.publish(MQTT_SEND_EVENT, msgMQTT);
+          Serial.println();
+      }
+      else
+        Serial.println("Error setting up MDNS responder");
     }
-    else
-      Serial.println("Error setting up MDNS responder");
-  }
+  #endif
 }
 
 void loop() {
   digitalWrite(LED, HIGH);
 
-  // Invokes mDNS::update and AutoConnect::handleClient() for the menu processing.
-  mDNSUpdate(MDNS);
-  portal.handleClient();
+  #if defined(USE_WIFI)
+    // Invokes mDNS::update and AutoConnect::handleClient() for the menu processing.
+    mDNSUpdate(MDNS);
+    portal.handleClient();
+  #endif
 
   // Timer und Intervalllängen für die PWM-Messung des CO2-Werts
   unsigned long timer;
 
   timer = millis();
   if ((timer / 1000) % 10 == 0 && timer > timer_output_0) {
-    timer_output_0 += 10*1000;  // nächste Anzeige in 10 Sekunden
+    timer_output_0 += 5*60*1000;  // nächste Anzeige in 5 Minuten
 
     mh_co2 = mhz19b.getCO2();
     if(mhz19b.errorCode != RESULT_OK) {
@@ -112,11 +122,12 @@ void loop() {
     //colorWipe(strip.Color(0, 255, 0), 50); // Green
     //colorWipe(strip.Color(0, 0, 255), 50); // Blue
 
-    snprintf (msgMQTT, 75, "S|%ld|%2d|%3d", (int)((dht_h*100)+.5), (int)((dht_t*100)+.5), (int)(mh_co2)); //cast float to int and generate answer
-    Serial.println("Publish message [" + String(MQTT_SEND_EVENT) + "]: " + String(msgMQTT));
-    client.publish(MQTT_SEND_EVENT, msgMQTT);
-    Serial.println("--------------------");
-
+    #if defined(USE_WIFI)
+      snprintf (msgMQTT, 75, "S|%ld|%2d|%3d", (int)((dht_h*100)+.5), (int)((dht_t*100)+.5), (int)(mh_co2)); //cast float to int and generate answer
+      Serial.println("Publish message [" + String(MQTT_SEND_EVENT) + "]: " + String(msgMQTT));
+      client.publish(MQTT_SEND_EVENT, msgMQTT);
+      Serial.println("--------------------");
+    #endif
   }
   digitalWrite(LED, HIGH);
 
