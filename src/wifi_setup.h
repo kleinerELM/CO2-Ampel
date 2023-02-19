@@ -39,6 +39,28 @@ WebServerClass  httpServer(HTTP_PORT);
 #define USERNAME "user"   //*< Replace the actual username you want */
 #define PASSWORD "pass"   //*< Replace the actual password you want */
 
+
+static const char AUX_AppPage[] PROGMEM = R"(
+{
+  "title": "Funksender",
+  "uri": "/",
+  "menu": true,
+  "element": [
+    {
+      "name": "caption",
+      "type": "ACText",
+      "value": "<h2>CO2-Sensor</h2>",
+      "style": "text-align:center;color:#2f4f4f;padding:10px;"
+    },
+    {
+      "name": "content",
+      "type": "ACText",
+      "value": "CO2-sensor und DHT22 auf Nodemcu mit ESP8266."
+    }
+  ]
+}
+)";
+
 // autoconnect AP-passwd = 12345678
 
 // Declare AutoConnectAux to bind the HTTPWebUpdateServer via /update url

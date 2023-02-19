@@ -2,32 +2,11 @@
 #include "functions.h"
 
 //Comment out to disable all wifi functions
-#define USE_WIFI
+//#define USE_WIFI
 
 #if defined(USE_WIFI)
   #include "wifi_setup.h"
 #endif
-
-static const char AUX_AppPage[] PROGMEM = R"(
-{
-  "title": "Funksender",
-  "uri": "/",
-  "menu": true,
-  "element": [
-    {
-      "name": "caption",
-      "type": "ACText",
-      "value": "<h2>CO2-Sensor</h2>",
-      "style": "text-align:center;color:#2f4f4f;padding:10px;"
-    },
-    {
-      "name": "content",
-      "type": "ACText",
-      "value": "CO2-sensor und DHT22 auf Nodemcu mit ESP8266."
-    }
-  ]
-}
-)";
 
 unsigned long timer_output_0 = 0;
 unsigned long timer_output_5 = 5000;
