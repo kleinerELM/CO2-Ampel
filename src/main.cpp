@@ -1,11 +1,24 @@
 #include <Arduino.h>
-#include "functions.h"
 
-//Comment out to disable all wifi functions
+// Comment to disable all wifi functions
 //#define USE_WIFI
+
+// Comment to disable Neopixel stuff
+//#define USE_NEOPIXEL
+
+// Comment to disable display stuff
+//#define USE_DISPLAY
+
+#include "functions.h"
 
 #if defined(USE_WIFI)
   #include "wifi_setup.h"
+#endif
+#if defined(USE_NEOPIXEL)
+  #include "neopixel.h"
+#endif
+#if defined(USE_DISPLAY)
+  #include "display.h"
 #endif
 
 unsigned long timer_output_0 = 0;
@@ -21,13 +34,17 @@ void setup() {
 
   // put your setup code here, to run once:
   Serial.begin(115200);
-  pinMode(LED, OUTPUT);
-  digitalWrite(LED, LOW);
 
-  init_display();
+  #if defined(USE_DISPLAY)
+    init_display();
+  #endif
+
   init_MHZ19B();
   init_DHT();
-  init_neopixel(0,0,125);
+
+  #if defined(USE_NEOPIXEL)
+    init_neopixel(0,0,125);
+  #endif  
 
   #if defined(USE_WIFI)
     Serial.println("-WiFi-");
@@ -64,7 +81,9 @@ void setup() {
 }
 
 void loop() {
-  digitalWrite(LED, HIGH);
+  #if defined(USE_NEOPIXEL)
+    digitalWrite(LED, HIGH);
+  #endif
 
   #if defined(USE_WIFI)
     // Invokes mDNS::update and AutoConnect::handleClient() for the menu processing.
@@ -94,12 +113,17 @@ void loop() {
     dht_h = event.relative_humidity;
 
     print_sensor_data( mh_co2, mh_t, mhz19b.errorCode, dht_t, dht_h );
-    display_sensor_data( mh_co2, mh_t, mhz19b.errorCode, dht_t, dht_h );
+    
+    #if defined(USE_DISPLAY)
+      display_sensor_data( mh_co2, mh_t, mhz19b.errorCode, dht_t, dht_h );
+    #endif
 
-    setWarningColorLevel( mh_co2 );
-    //colorWipe(strip.Color(255, 0, 0), 50); // Red
-    //colorWipe(strip.Color(0, 255, 0), 50); // Green
-    //colorWipe(strip.Color(0, 0, 255), 50); // Blue
+    #if defined(USE_NEOPIXEL)
+      setWarningColorLevel( mh_co2 );
+      //colorWipe(strip.Color(255, 0, 0), 50); // Red
+      //colorWipe(strip.Color(0, 255, 0), 50); // Green
+      //colorWipe(strip.Color(0, 0, 255), 50); // Blue
+    #endif
 
     #if defined(USE_WIFI)
       snprintf (msgMQTT, 75, "S|%ld|%2d|%3d", (int)((dht_h*100)+.5), (int)((dht_t*100)+.5), (int)(mh_co2)); //cast float to int and generate answer
@@ -108,7 +132,9 @@ void loop() {
       Serial.println("--------------------");
     #endif
   }
-  digitalWrite(LED, HIGH);
+  #if defined(USE_NEOPIXEL)
+    digitalWrite(LED, HIGH);
+  #endif
 
   delay(100);  // kurz warten (1/10 Sekunde; kann entfallen)
 }
